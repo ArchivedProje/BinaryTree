@@ -8,11 +8,12 @@
 template<typename T, typename Allocator = std::allocator<T>>
 class BinaryTree {
 private:
-    struct Node {
+    class Node {
+    private:
         T value_;
         Node *left_;
         Node *right_;
-
+    public:
         explicit Node(const T &value) : value_(value), left_(nullptr), right_(nullptr) {}
 
         T &value() {
@@ -23,11 +24,19 @@ private:
             return value_;
         }
 
-        Node *left() {
+        Node *&left() {
             return left_;
         }
 
-        Node *right() {
+        const Node *&left() const {
+            return left_;
+        }
+
+        Node *&right() {
+            return right_;
+        }
+
+        const Node *&right() const {
             return right_;
         }
     };
@@ -50,46 +59,46 @@ private:
     }
 
     void append(const T &value, Node *node) {
-        if (value < node->value_) {
-            if (node->left_ != nullptr) {
-                append(value, node->left_);
+        if (value < node->value()) {
+            if (node->left() != nullptr) {
+                append(value, node->left());
             } else {
-                try_construct(node->left_, value);
+                try_construct(node->left(), value);
             }
         } else {
-            if (node->right_ != nullptr) {
-                append(value, node->right_);
+            if (node->right() != nullptr) {
+                append(value, node->right());
             } else {
-                try_construct(node->right_, value);
+                try_construct(node->right(), value);
             }
         }
     }
 
     Node *find(const T &value, Node *node) {
-        if (node == nullptr || node->value_ == value) {
+        if (node == nullptr || node->value() == value) {
             return node;
         }
-        if (value < node->value_) {
-            return find(value, node->left_);
+        if (value < node->value()) {
+            return find(value, node->left());
         } else {
-            return find(value, node->right_);
+            return find(value, node->right());
         }
     }
 
     Node *get_parent(const T &value, Node *node, Node *prev) {
-        if (node->value_ == value) {
+        if (node->value() == value) {
             return prev;
         }
-        if (value < node->value_) {
-            return get_parent(value, node->left_, node);
+        if (value < node->value()) {
+            return get_parent(value, node->left(), node);
         } else {
-            return get_parent(value, node->right_, node);
+            return get_parent(value, node->right(), node);
         }
     }
 
     Node *get_minimum_from_this(Node *node) {
-        while (node->left_ != nullptr) {
-            node = node->left_;
+        while (node->left() != nullptr) {
+            node = node->left();
         }
         return node;
     }
@@ -101,14 +110,15 @@ private:
         return get_parent(value, root_, nullptr);
     }
 
-    void remove_all(Node* node) {
+    void remove_all(Node *node) {
         if (node != nullptr) {
-            remove_all(node->left_);
-            remove_all(node->right_);
+            remove_all(node->left());
+            remove_all(node->right());
             AllocTraits::destroy(allocator_, node);
             AllocTraits::deallocate(allocator_, node, 1);
         }
     }
+
 public:
     BinaryTree() : root_(nullptr), size_(0) {}
 
@@ -154,29 +164,29 @@ public:
         }
         auto parent = get_parent(value);
         // node doesn't have children
-        if (node->left_ == nullptr && node->right_ == nullptr) {
+        if (node->left() == nullptr && node->right() == nullptr) {
             if (node != root_) {
-                if (parent->left_ == node) {
-                    parent->left_ = nullptr;
+                if (parent->left() == node) {
+                    parent->left() = nullptr;
                 } else {
-                    parent->right_ = nullptr;
+                    parent->right() = nullptr;
                 }
             } else {
                 root_ = nullptr;
             }
             AllocTraits::destroy(allocator_, node);
             AllocTraits::deallocate(allocator_, node, 1);
-        } else if (node->left_ != nullptr && node->right_ != nullptr) { // node has two children
-            auto min_value = get_minimum_from_this(node)->value_;
+        } else if (node->left() != nullptr && node->right() != nullptr) { // node has two children
+            auto min_value = get_minimum_from_this(node)->value();
             remove(min_value);
-            node->value_ = min_value;
+            node->value() = min_value;
         } else { // node has only one child
-            auto child = node->left_ != nullptr ? node->left_ : node->right_;
+            auto child = node->left() != nullptr ? node->left() : node->right();
             if (node != root_) {
-                if (node == parent->left_) {
-                    parent->left_ = child;
+                if (node == parent->left()) {
+                    parent->left() = child;
                 } else {
-                    parent->right_ = child;
+                    parent->right() = child;
                 }
             } else {
                 root_ = child;
